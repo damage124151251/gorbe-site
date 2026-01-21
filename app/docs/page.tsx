@@ -62,9 +62,13 @@ The entire experience runs in your browser, with AI processing handled server-si
 - 100% Fair Launch on Pump.fun
 - No team allocation
 - No presale
-- LP burned on graduation
 
-The token is designed for the community with a completely fair launch mechanism.`
+**Token Burn:**
+- LP tokens will be burned on graduation from Pump.fun
+- Dev tokens will be burned to ensure full community ownership
+- All burns will be verifiable on-chain
+
+The token is designed for the community with a completely fair launch mechanism. No insider advantages, no hidden allocations.`
     },
     {
       id: 'faq',
