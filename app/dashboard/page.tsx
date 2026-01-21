@@ -43,7 +43,7 @@ export default function Dashboard() {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gradient mb-2">Launch Info</h1>
-          <p className="text-gray-400">Everything you need to know about the GORBE token launch</p>
+          <p className="text-gray-400">Fair launch. No promises. Just an AI with a token.</p>
         </motion.div>
 
         {/* Token Info Card */}

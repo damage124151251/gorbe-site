@@ -142,7 +142,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gradient">GORBE</h2>
-                  <p className="text-sm text-gray-400">AI Character</p>
+                  <p className="text-sm text-gray-400">The AI that thinks, so you don't have to</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className={`w-2 h-2 rounded-full ${isThinking ? 'bg-yellow-400 animate-pulse' : 'bg-gorbe-lime'}`} />
                     <span className="text-xs text-gorbe-lime">

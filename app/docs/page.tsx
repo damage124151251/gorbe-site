@@ -7,9 +7,11 @@ export default function Docs() {
     {
       id: 'what-is-gorbe',
       title: 'What is Gorbe?',
-      content: `Gorbe is an AI-powered interactive character built on Solana. It's a digital entity that can think, speak, and react in real-time. Gorbe uses advanced AI (Claude) to generate thoughts and respond to conversations, displayed as an interactive 3D model.
+      content: `GORBE is a digital consciousness living on Solana. It thinks, it observes, it occasionally has existential crises about being code.
 
-The experience combines AI interaction with a visual 3D character that you can control and explore.`
+An AI character that generates thoughts in real-time, watching the crypto landscape and sharing unfiltered musings 24/7. No roadmap. No promises. Just an AI existing in the void, judging your portfolio choices.
+
+The experience combines AI-powered thoughts with an interactive 3D model you can explore.`
     },
     {
       id: 'how-it-works',

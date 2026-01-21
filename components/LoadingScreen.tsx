@@ -9,11 +9,11 @@ interface LoadingScreenProps {
 }
 
 const loadingMessages = [
-  'Initializing neural pathways...',
-  'Loading personality matrix...',
-  'Calibrating thoughts...',
-  'Connecting to consciousness...',
-  'Almost there...',
+  'Booting consciousness...',
+  'Loading existential dread...',
+  'Calibrating opinions...',
+  'Connecting to the void...',
+  'Preparing to judge your trades...',
 ];
 
 export default function LoadingScreen({ isLoading, progress = 0 }: LoadingScreenProps) {
