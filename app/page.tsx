@@ -10,7 +10,7 @@ const GorbeScene = dynamic(() => import('@/components/GorbeModel'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex flex-col items-center justify-center bg-gorbe-dark">
-      <div className="text-6xl mb-4 animate-bounce">🤖</div>
+      <div className="w-16 h-16 mb-4 rounded-full border-4 border-gorbe-lime/30 border-t-gorbe-lime animate-spin" />
       <div className="text-gorbe-lime animate-pulse">Loading Gorbe...</div>
     </div>
   ),
@@ -148,8 +148,7 @@ export default function Home() {
             </div>
 
             <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-gorbe-gray/80">
-              <span className="text-sm">👀</span>
-              <span className="text-sm text-gray-300">{viewerCount}</span>
+              <span className="text-sm text-gray-300">{viewerCount} viewers</span>
             </div>
 
             <GorbeScene
@@ -158,10 +157,6 @@ export default function Home() {
               isSpeaking={isSpeaking}
               onLoad={() => {}}
             />
-
-            <div className="absolute bottom-4 left-4 right-4 z-10">
-              <ThoughtBubble thought={currentThought} isThinking={isThinking} isSpeaking={isSpeaking} />
-            </div>
           </div>
 
           <div className="sidebar-area">
@@ -187,6 +182,8 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            <ThoughtBubble thought={currentThought} isThinking={isThinking} isSpeaking={isSpeaking} />
 
             <div className="flex-1 min-h-0">
               <ChatPanel messages={messages} onSendMessage={handleSendMessage} isThinking={isThinking} />

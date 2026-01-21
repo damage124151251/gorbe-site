@@ -16,6 +16,24 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Use refs to track current prop values for animation loop
+  const mouseRef = useRef(mousePosition);
+  const thinkingRef = useRef(isThinking);
+  const speakingRef = useRef(isSpeaking);
+
+  // Update refs when props change
+  useEffect(() => {
+    mouseRef.current = mousePosition;
+  }, [mousePosition]);
+
+  useEffect(() => {
+    thinkingRef.current = isThinking;
+  }, [isThinking]);
+
+  useEffect(() => {
+    speakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -62,6 +80,7 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
 
     // Load model
     let model: THREE.Group | null = null;
+    const eyes: THREE.Object3D[] = [];
     const loader = new GLTFLoader();
 
     loader.load(
@@ -70,13 +89,21 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
         model = gltf.scene;
         model.scale.set(2, 2, 2);
         model.position.set(0, -1, 0);
+
+        // Find eye meshes in the model
+        model.traverse((child) => {
+          const name = child.name.toLowerCase();
+          if (name.includes('eye') || name.includes('olho') || name.includes('pupil')) {
+            eyes.push(child);
+            console.log('Found eye:', child.name);
+          }
+        });
+
         scene.add(model);
         setLoading(false);
         onLoad?.();
       },
-      (progress) => {
-        // Loading progress
-      },
+      undefined,
       (err) => {
         console.error('Error loading model:', err);
         setError(true);
@@ -84,11 +111,11 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
       }
     );
 
-    // Mouse tracking
-    let targetRotationX = 0;
-    let targetRotationY = 0;
+    // Mouse tracking - increased range for more visible effect
     let currentRotationX = 0;
     let currentRotationY = 0;
+    let currentEyeRotationX = 0;
+    let currentEyeRotationY = 0;
 
     // Animation
     let animationId: number;
@@ -99,23 +126,36 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
 
       const time = clock.getElapsedTime();
 
-      // Update target rotation based on mouse
-      targetRotationY = (mousePosition.x - 0.5) * 0.5;
-      targetRotationX = (mousePosition.y - 0.5) * -0.3;
+      // Update target rotation based on mouse (using ref for latest value)
+      // Model follows mouse with moderate rotation
+      const targetRotationY = (mouseRef.current.x - 0.5) * 0.8;
+      const targetRotationX = (mouseRef.current.y - 0.5) * -0.4;
+
+      // Eyes follow mouse with more range
+      const targetEyeRotationY = (mouseRef.current.x - 0.5) * 0.5;
+      const targetEyeRotationX = (mouseRef.current.y - 0.5) * -0.3;
 
       // Smooth interpolation
-      currentRotationX += (targetRotationX - currentRotationX) * 0.05;
-      currentRotationY += (targetRotationY - currentRotationY) * 0.05;
+      currentRotationX += (targetRotationX - currentRotationX) * 0.08;
+      currentRotationY += (targetRotationY - currentRotationY) * 0.08;
+      currentEyeRotationX += (targetEyeRotationX - currentEyeRotationX) * 0.15;
+      currentEyeRotationY += (targetEyeRotationY - currentEyeRotationY) * 0.15;
 
       if (model) {
         model.rotation.x = currentRotationX;
         model.rotation.y = currentRotationY;
 
+        // Animate eyes separately if found
+        eyes.forEach((eye) => {
+          eye.rotation.x = currentEyeRotationX;
+          eye.rotation.y = currentEyeRotationY;
+        });
+
         // Floating animation
         model.position.y = -1 + Math.sin(time * 0.5) * 0.1;
 
-        // Pulse when thinking
-        if (isThinking) {
+        // Pulse when thinking (using ref for latest value)
+        if (thinkingRef.current) {
           const scale = 2 + Math.sin(time * 3) * 0.05;
           model.scale.set(scale, scale, scale);
         } else {
@@ -124,7 +164,7 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
       }
 
       // Ring pulse
-      ring.material.opacity = isThinking ? 0.4 + Math.sin(time * 2) * 0.2 : 0.3;
+      ring.material.opacity = thinkingRef.current ? 0.4 + Math.sin(time * 2) * 0.2 : 0.3;
 
       renderer.render(scene, camera);
     };
@@ -150,37 +190,24 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
         container.removeChild(renderer.domElement);
       }
     };
-  }, []);
-
-  // Update mouse position ref
-  useEffect(() => {
-    // Mouse position is passed as prop and used in animation loop
-  }, [mousePosition]);
+  }, [onLoad]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gorbe-dark z-10">
-          <div className="text-6xl mb-4 animate-bounce">🤖</div>
+          <div className="w-16 h-16 mb-4 rounded-full border-4 border-gorbe-lime/30 border-t-gorbe-lime animate-spin" />
           <div className="text-gorbe-lime animate-pulse">Loading Gorbe...</div>
         </div>
       )}
 
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gorbe-dark z-10">
-          <div className="text-6xl mb-4">🤖</div>
           <div className="text-gorbe-lime text-xl font-bold">GORBE</div>
           <div className="text-gray-400 text-sm mt-2">3D Loading...</div>
         </div>
       )}
 
-      {/* Status indicator */}
-      <div className="absolute bottom-4 left-4 flex items-center gap-2 z-20">
-        <div className={`w-3 h-3 rounded-full ${isThinking ? 'bg-yellow-400 animate-pulse' : isSpeaking ? 'bg-gorbe-lime animate-pulse' : 'bg-gorbe-lime'}`} />
-        <span className="text-sm text-gray-400 font-mono">
-          {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : 'Online'}
-        </span>
-      </div>
     </div>
   );
 }

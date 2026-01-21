@@ -253,9 +253,5 @@ body {
 }
 
 .thought-bubble::after {
-  content: '💭';
-  position: absolute;
-  top: -12px;
-  right: 20px;
-  font-size: 24px;
+  content: '';
 }

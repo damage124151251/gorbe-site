@@ -48,7 +48,6 @@ export default function ChatPanel({ messages, onSendMessage, isThinking }: ChatP
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gorbe-lime/10">
         <div className="flex items-center gap-2">
-          <span className="text-lg">💬</span>
           <span className="font-semibold text-white">Chat with Gorbe</span>
         </div>
         <div className="flex items-center gap-2">
@@ -63,7 +62,6 @@ export default function ChatPanel({ messages, onSendMessage, isThinking }: ChatP
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <span className="text-4xl mb-4">👋</span>
             <p className="text-gray-400 mb-4">Start a conversation with Gorbe!</p>
             <div className="flex flex-wrap justify-center gap-2">
               {quickPrompts.map((prompt, index) => (
