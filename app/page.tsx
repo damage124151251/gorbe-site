@@ -22,6 +22,37 @@ export default function Home() {
   const [currentThought, setCurrentThought] = useState('');
   const [thoughtHistory, setThoughtHistory] = useState<string[]>([]);
 
+  // Load saved thoughts from localStorage on mount
+  useEffect(() => {
+    const savedThoughts = localStorage.getItem('gorbe-thoughts');
+    const savedCurrent = localStorage.getItem('gorbe-current-thought');
+
+    if (savedThoughts) {
+      try {
+        setThoughtHistory(JSON.parse(savedThoughts));
+      } catch (e) {
+        console.error('Error loading saved thoughts');
+      }
+    }
+
+    if (savedCurrent) {
+      setCurrentThought(savedCurrent);
+    }
+  }, []);
+
+  // Save thoughts to localStorage when they change
+  useEffect(() => {
+    if (thoughtHistory.length > 0) {
+      localStorage.setItem('gorbe-thoughts', JSON.stringify(thoughtHistory));
+    }
+  }, [thoughtHistory]);
+
+  useEffect(() => {
+    if (currentThought) {
+      localStorage.setItem('gorbe-current-thought', currentThought);
+    }
+  }, [currentThought]);
+
   // Loading progress
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,18 +79,27 @@ export default function Home() {
         const data = await response.json();
         if (data.thought) {
           setCurrentThought(data.thought);
-          setThoughtHistory(prev => [data.thought, ...prev].slice(0, 10));
+          setThoughtHistory(prev => {
+            const newHistory = [data.thought, ...prev.filter(t => t !== data.thought)].slice(0, 20);
+            return newHistory;
+          });
         }
       } catch (error) {
         console.error('Error generating thought:', error);
-        setCurrentThought('Connecting to consciousness...');
       } finally {
         setTimeout(() => setIsThinking(false), 2000);
       }
     };
 
-    // Generate first thought after 2 seconds
-    const initialTimeout = setTimeout(generateThought, 2000);
+    // Generate first thought after 2 seconds (only if no saved thought)
+    const initialTimeout = setTimeout(() => {
+      if (!currentThought) {
+        generateThought();
+      } else {
+        // If we have a saved thought, still generate a new one but after showing the saved one
+        setTimeout(generateThought, 5000);
+      }
+    }, 2000);
 
     // Then generate new thoughts every 30 seconds
     const interval = setInterval(generateThought, 30000);
