@@ -3,29 +3,24 @@
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 interface GorbeSceneProps {
-  mousePosition: { x: number; y: number };
   isThinking: boolean;
   isSpeaking: boolean;
   onLoad?: () => void;
 }
 
-export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLoad }: GorbeSceneProps) {
+export default function GorbeScene({ isThinking, isSpeaking, onLoad }: GorbeSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   // Use refs to track current prop values for animation loop
-  const mouseRef = useRef(mousePosition);
   const thinkingRef = useRef(isThinking);
   const speakingRef = useRef(isSpeaking);
 
   // Update refs when props change
-  useEffect(() => {
-    mouseRef.current = mousePosition;
-  }, [mousePosition]);
-
   useEffect(() => {
     thinkingRef.current = isThinking;
   }, [isThinking]);
@@ -53,6 +48,16 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
+    // OrbitControls - like Blender 3D navigation
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.minDistance = 2;
+    controls.maxDistance = 15;
+    controls.target.set(0, 0, 0);
+
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -61,26 +66,21 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
     directionalLight.position.set(5, 10, 7);
     scene.add(directionalLight);
 
-    const greenLight = new THREE.PointLight(0xa3e635, 0.8, 10);
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(-5, -5, -5);
+    scene.add(backLight);
+
+    const greenLight = new THREE.PointLight(0xa3e635, 0.5, 10);
     greenLight.position.set(0, 2, 3);
     scene.add(greenLight);
 
-    // Glow ring
-    const ringGeometry = new THREE.RingGeometry(1.5, 2, 64);
-    const ringMaterial = new THREE.MeshBasicMaterial({
-      color: 0xa3e635,
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.DoubleSide
-    });
-    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = -1.5;
-    scene.add(ring);
+    // Grid helper for 3D reference
+    const gridHelper = new THREE.GridHelper(10, 20, 0x333333, 0x222222);
+    gridHelper.position.y = -2;
+    scene.add(gridHelper);
 
     // Load model
     let model: THREE.Group | null = null;
-    const eyes: THREE.Object3D[] = [];
     const loader = new GLTFLoader();
 
     loader.load(
@@ -90,14 +90,11 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
         model.scale.set(2, 2, 2);
         model.position.set(0, -1, 0);
 
-        // Find eye meshes in the model
-        model.traverse((child) => {
-          const name = child.name.toLowerCase();
-          if (name.includes('eye') || name.includes('olho') || name.includes('pupil')) {
-            eyes.push(child);
-            console.log('Found eye:', child.name);
-          }
-        });
+        // Center the model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        model.position.y = -1;
 
         scene.add(model);
         setLoading(false);
@@ -111,12 +108,6 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
       }
     );
 
-    // Mouse tracking - increased range for more visible effect
-    let currentRotationX = 0;
-    let currentRotationY = 0;
-    let currentEyeRotationX = 0;
-    let currentEyeRotationY = 0;
-
     // Animation
     let animationId: number;
     const clock = new THREE.Clock();
@@ -126,35 +117,11 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
 
       const time = clock.getElapsedTime();
 
-      // Update target rotation based on mouse (using ref for latest value)
-      // Model follows mouse with moderate rotation
-      const targetRotationY = (mouseRef.current.x - 0.5) * 0.8;
-      const targetRotationX = (mouseRef.current.y - 0.5) * -0.4;
-
-      // Eyes follow mouse with more range
-      const targetEyeRotationY = (mouseRef.current.x - 0.5) * 0.5;
-      const targetEyeRotationX = (mouseRef.current.y - 0.5) * -0.3;
-
-      // Smooth interpolation
-      currentRotationX += (targetRotationX - currentRotationX) * 0.08;
-      currentRotationY += (targetRotationY - currentRotationY) * 0.08;
-      currentEyeRotationX += (targetEyeRotationX - currentEyeRotationX) * 0.15;
-      currentEyeRotationY += (targetEyeRotationY - currentEyeRotationY) * 0.15;
+      // Update controls
+      controls.update();
 
       if (model) {
-        model.rotation.x = currentRotationX;
-        model.rotation.y = currentRotationY;
-
-        // Animate eyes separately if found
-        eyes.forEach((eye) => {
-          eye.rotation.x = currentEyeRotationX;
-          eye.rotation.y = currentEyeRotationY;
-        });
-
-        // Floating animation
-        model.position.y = -1 + Math.sin(time * 0.5) * 0.1;
-
-        // Pulse when thinking (using ref for latest value)
+        // Pulse when thinking
         if (thinkingRef.current) {
           const scale = 2 + Math.sin(time * 3) * 0.05;
           model.scale.set(scale, scale, scale);
@@ -162,9 +129,6 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
           model.scale.set(2, 2, 2);
         }
       }
-
-      // Ring pulse
-      ring.material.opacity = thinkingRef.current ? 0.4 + Math.sin(time * 2) * 0.2 : 0.3;
 
       renderer.render(scene, camera);
     };
@@ -185,6 +149,7 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
+      controls.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -193,7 +158,7 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
   }, [onLoad]);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <div ref={containerRef} className="w-full h-full relative cursor-grab active:cursor-grabbing">
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gorbe-dark z-10">
           <div className="w-16 h-16 mb-4 rounded-full border-4 border-gorbe-lime/30 border-t-gorbe-lime animate-spin" />
@@ -208,6 +173,14 @@ export default function GorbeScene({ mousePosition, isThinking, isSpeaking, onLo
         </div>
       )}
 
+      {/* Controls hint */}
+      {!loading && !error && (
+        <div className="absolute bottom-4 left-4 text-xs text-gray-500 pointer-events-none">
+          <div>Drag to rotate</div>
+          <div>Scroll to zoom</div>
+          <div>Right-click to pan</div>
+        </div>
+      )}
     </div>
   );
 }

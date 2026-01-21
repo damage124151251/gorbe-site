@@ -26,12 +26,10 @@ interface Message {
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentThought, setCurrentThought] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [viewerCount] = useState(Math.floor(Math.random() * 100) + 50);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,17 +43,6 @@ export default function Home() {
       });
     }, 200);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: e.clientX / window.innerWidth,
-        y: e.clientY / window.innerHeight,
-      });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   useEffect(() => {
@@ -142,17 +129,7 @@ export default function Home() {
       <div className="min-h-screen bg-gorbe-black">
         <div className="stream-container">
           <div className="scene-area relative">
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/50">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-semibold text-red-400">LIVE</span>
-            </div>
-
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-gorbe-gray/80">
-              <span className="text-sm text-gray-300">{viewerCount} viewers</span>
-            </div>
-
             <GorbeScene
-              mousePosition={mousePosition}
               isThinking={isThinking}
               isSpeaking={isSpeaking}
               onLoad={() => {}}
