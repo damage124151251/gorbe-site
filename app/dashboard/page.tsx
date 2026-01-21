@@ -6,15 +6,14 @@ import { motion } from 'framer-motion';
 export default function Dashboard() {
   const [copied, setCopied] = useState(false);
 
-  // Token info - replace with real data
   const tokenInfo = {
     name: 'GORBE',
     symbol: '$GORBE',
     network: 'Solana',
-    contractAddress: 'Coming Soon',
+    contractAddress: 'FPxnXNrbzVTwBbhsWmA67wvcitq8XjTGkTDgWZ7Hpump',
     totalSupply: '1,000,000,000',
     decimals: 9,
-    launchDate: 'TBA',
+    launchDate: 'LIVE',
     launchPlatform: 'Pump.fun',
   };
 
