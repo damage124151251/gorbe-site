@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import LoadingScreen from '@/components/LoadingScreen';
 import ThoughtBubble from '@/components/ThoughtBubble';
 import ChatPanel from '@/components/ChatPanel';
 
-// Dynamic import for 3D component with error boundary
 const GorbeScene = dynamic(() => import('@/components/GorbeModel'), {
   ssr: false,
   loading: () => (
@@ -24,24 +23,6 @@ interface Message {
   timestamp: Date;
 }
 
-function FallbackAvatar({ isThinking, isSpeaking }: { isThinking: boolean; isSpeaking: boolean }) {
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-gorbe-dark relative">
-      <div className={`text-9xl ${isThinking ? 'animate-pulse' : 'animate-bounce'}`}>🤖</div>
-      <div className="text-gorbe-lime text-2xl font-bold mt-4">GORBE</div>
-      <div className="text-gray-400 text-sm mt-2">
-        {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : 'Online'}
-      </div>
-      <div className="absolute bottom-4 left-4 flex items-center gap-2">
-        <div className={`w-3 h-3 rounded-full ${isThinking ? 'bg-yellow-400 animate-pulse' : 'bg-gorbe-lime'}`} />
-        <span className="text-sm text-gray-400 font-mono">
-          {isThinking ? 'Processing...' : 'Live'}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -50,10 +31,8 @@ export default function Home() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentThought, setCurrentThought] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [use3D, setUse3D] = useState(true);
   const [viewerCount] = useState(Math.floor(Math.random() * 100) + 50);
 
-  // Loading progress simulation
   useEffect(() => {
     const interval = setInterval(() => {
       setLoadingProgress((prev) => {
@@ -65,11 +44,9 @@ export default function Home() {
         return prev + Math.random() * 20;
       });
     }, 200);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Track mouse position
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({
@@ -77,12 +54,10 @@ export default function Home() {
         y: e.clientY / window.innerHeight,
       });
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Auto-generate thoughts
   useEffect(() => {
     if (isLoading) return;
 
@@ -95,16 +70,13 @@ export default function Home() {
           setCurrentThought(data.thought);
         }
       } catch (error) {
-        console.error('Thought error:', error);
         setCurrentThought('Just vibing in the digital void...');
       } finally {
         setTimeout(() => setIsThinking(false), 2000);
       }
     };
 
-    // First thought
     const initialTimeout = setTimeout(generateThought, 3000);
-    // Periodic thoughts
     const interval = setInterval(generateThought, 45000);
 
     return () => {
@@ -113,7 +85,6 @@ export default function Home() {
     };
   }, [isLoading]);
 
-  // Handle chat messages
   const handleSendMessage = useCallback(async (message: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -131,10 +102,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
-          context: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          context: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -155,11 +123,10 @@ export default function Home() {
         setTimeout(() => setIsSpeaking(false), 2000);
       }
     } catch (error) {
-      console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'gorbe',
-        content: "Hmm, my circuits are a bit fuzzy. Try again?",
+        content: "Hmm, my circuits are fuzzy. Try again?",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -174,53 +141,30 @@ export default function Home() {
 
       <div className="min-h-screen bg-gorbe-black">
         <div className="stream-container">
-          {/* Main Scene Area */}
           <div className="scene-area relative">
-            {/* Live indicator */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/50">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span className="text-sm font-semibold text-red-400">LIVE</span>
             </div>
 
-            {/* Viewers */}
             <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-gorbe-gray/80">
               <span className="text-sm">👀</span>
               <span className="text-sm text-gray-300">{viewerCount}</span>
             </div>
 
-            {/* Toggle 3D button */}
-            <button
-              onClick={() => setUse3D(!use3D)}
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-gorbe-gray/80 text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              {use3D ? '2D Mode' : '3D Mode'}
-            </button>
+            <GorbeScene
+              mousePosition={mousePosition}
+              isThinking={isThinking}
+              isSpeaking={isSpeaking}
+              onLoad={() => {}}
+            />
 
-            {/* 3D or Fallback */}
-            {use3D ? (
-              <GorbeScene
-                mousePosition={mousePosition}
-                isThinking={isThinking}
-                isSpeaking={isSpeaking}
-                onLoad={() => {}}
-              />
-            ) : (
-              <FallbackAvatar isThinking={isThinking} isSpeaking={isSpeaking} />
-            )}
-
-            {/* Thought bubble */}
             <div className="absolute bottom-4 left-4 right-4 z-10">
-              <ThoughtBubble
-                thought={currentThought}
-                isThinking={isThinking}
-                isSpeaking={isSpeaking}
-              />
+              <ThoughtBubble thought={currentThought} isThinking={isThinking} isSpeaking={isSpeaking} />
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="sidebar-area">
-            {/* Profile Card */}
             <div className="glass rounded-2xl p-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full overflow-hidden avatar-frame">
@@ -244,13 +188,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Chat */}
             <div className="flex-1 min-h-0">
-              <ChatPanel
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                isThinking={isThinking}
-              />
+              <ChatPanel messages={messages} onSendMessage={handleSendMessage} isThinking={isThinking} />
             </div>
           </div>
         </div>
