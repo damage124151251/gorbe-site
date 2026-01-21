@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: 'GORBE - AI Interactive Experience',
   description: 'Meet Gorbe - An AI-powered interactive character that thinks, speaks, and reacts live.',
   keywords: ['AI', 'interactive', 'Solana', 'memecoin', '3D', 'streaming'],
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'GORBE - AI Interactive Experience',
     description: 'Meet Gorbe - An AI-powered interactive character that thinks, speaks, and reacts live.',
