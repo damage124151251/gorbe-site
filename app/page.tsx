@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import LoadingScreen from '@/components/LoadingScreen';
 import ThoughtBubble from '@/components/ThoughtBubble';
-import ChatPanel from '@/components/ChatPanel';
 
 const GorbeScene = dynamic(() => import('@/components/GorbeModel'), {
   ssr: false,
@@ -16,21 +15,14 @@ const GorbeScene = dynamic(() => import('@/components/GorbeModel'), {
   ),
 });
 
-interface Message {
-  id: string;
-  role: 'user' | 'gorbe';
-  content: string;
-  timestamp: Date;
-}
-
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isThinking, setIsThinking] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentThought, setCurrentThought] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [thoughtHistory, setThoughtHistory] = useState<string[]>([]);
 
+  // Loading progress
   useEffect(() => {
     const interval = setInterval(() => {
       setLoadingProgress((prev) => {
@@ -45,6 +37,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-generate thoughts
   useEffect(() => {
     if (isLoading) return;
 
@@ -55,16 +48,21 @@ export default function Home() {
         const data = await response.json();
         if (data.thought) {
           setCurrentThought(data.thought);
+          setThoughtHistory(prev => [data.thought, ...prev].slice(0, 10));
         }
       } catch (error) {
-        setCurrentThought('Just vibing in the digital void...');
+        console.error('Error generating thought:', error);
+        setCurrentThought('Connecting to consciousness...');
       } finally {
         setTimeout(() => setIsThinking(false), 2000);
       }
     };
 
-    const initialTimeout = setTimeout(generateThought, 3000);
-    const interval = setInterval(generateThought, 45000);
+    // Generate first thought after 2 seconds
+    const initialTimeout = setTimeout(generateThought, 2000);
+
+    // Then generate new thoughts every 30 seconds
+    const interval = setInterval(generateThought, 30000);
 
     return () => {
       clearTimeout(initialTimeout);
@@ -72,71 +70,24 @@ export default function Home() {
     };
   }, [isLoading]);
 
-  const handleSendMessage = useCallback(async (message: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: message,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsThinking(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          context: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.reply) {
-        setIsSpeaking(true);
-        setCurrentThought(data.reply);
-
-        const gorbeMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'gorbe',
-          content: data.reply,
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, gorbeMessage]);
-        setTimeout(() => setIsSpeaking(false), 2000);
-      }
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'gorbe',
-        content: "Hmm, my circuits are fuzzy. Try again?",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsThinking(false);
-    }
-  }, [messages]);
-
   return (
     <>
       <LoadingScreen isLoading={isLoading} progress={Math.min(loadingProgress, 100)} />
 
       <div className="min-h-screen bg-gorbe-black">
         <div className="stream-container">
+          {/* 3D Model Area */}
           <div className="scene-area relative">
             <GorbeScene
               isThinking={isThinking}
-              isSpeaking={isSpeaking}
+              isSpeaking={false}
               onLoad={() => {}}
             />
           </div>
 
+          {/* Sidebar - Thoughts Only */}
           <div className="sidebar-area">
+            {/* Profile Card */}
             <div className="glass rounded-2xl p-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full overflow-hidden avatar-frame">
@@ -151,19 +102,41 @@ export default function Home() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gradient">GORBE</h2>
-                  <p className="text-sm text-gray-400">AI Interactive Character</p>
+                  <p className="text-sm text-gray-400">AI Character</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="status-online" />
-                    <span className="text-xs text-gorbe-lime">Online</span>
+                    <div className={`w-2 h-2 rounded-full ${isThinking ? 'bg-yellow-400 animate-pulse' : 'bg-gorbe-lime'}`} />
+                    <span className="text-xs text-gorbe-lime">
+                      {isThinking ? 'Thinking...' : 'Online'}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <ThoughtBubble thought={currentThought} isThinking={isThinking} isSpeaking={isSpeaking} />
+            {/* Current Thought */}
+            <ThoughtBubble
+              thought={currentThought}
+              isThinking={isThinking}
+              isSpeaking={false}
+            />
 
-            <div className="flex-1 min-h-0">
-              <ChatPanel messages={messages} onSendMessage={handleSendMessage} isThinking={isThinking} />
+            {/* Thought History */}
+            <div className="flex-1 min-h-0 glass rounded-2xl p-4 overflow-hidden">
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Recent Thoughts</h3>
+              <div className="space-y-3 overflow-y-auto max-h-[300px]">
+                {thoughtHistory.length === 0 ? (
+                  <p className="text-gray-500 text-sm italic">Waiting for thoughts...</p>
+                ) : (
+                  thoughtHistory.map((thought, index) => (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-lg bg-gorbe-dark/50 ${index === 0 ? 'border-l-2 border-gorbe-lime' : ''}`}
+                    >
+                      <p className="text-sm text-gray-300">{thought}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
