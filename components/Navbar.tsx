@@ -10,9 +10,9 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/docs', label: 'Docs', icon: '📄' },
+    { href: '/', label: 'Home' },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/docs', label: 'Docs' },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -48,7 +48,6 @@ export default function Navbar() {
                     : 'text-gray-300 hover:text-white hover:bg-gorbe-gray'
                 }`}
               >
-                <span className="mr-2">{link.icon}</span>
                 {link.label}
               </Link>
             ))}
@@ -58,7 +57,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gorbe-gray">
               <div className="status-online" />
-              <span className="text-sm text-gray-400">Live</span>
+              <span className="text-sm text-gray-400">Online</span>
             </div>
           </div>
 
@@ -99,7 +98,6 @@ export default function Navbar() {
                       : 'text-gray-300 hover:bg-gorbe-gray'
                   }`}
                 >
-                  <span>{link.icon}</span>
                   {link.label}
                 </Link>
               ))}
